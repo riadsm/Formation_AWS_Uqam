@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title> Spaceship </title>
+<!-- Ce travail a été complété dans le cours d'Infographie-->
+<style>
+    body{
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+    }
+
+</style>
+
+
+<script>
+
+    //Graphics
+        var canvas;    // Objet DOM correspondant au canvas
+        var graphics;  // Contexte de graphique 2d pour dessiner sur la canvas
+
+    //Vaiseau
+        //Vitesses relatives des batiments
+            //Variable qui offset la position x des batiments
+            var drag =0;
+            //vitesses ratio relatifs à la vitesse du vaiseau(3 = 3x plus rapide)
+            var f1 = 1;
+            var f2 = 2;
+            var f3 = 3;
+
+        //Permet de faire des flammes
+        var ultraspeed = false;
+
+        var vesselPos = {x:50, y:50} // Position du vaisseau spatial
+        var vesselSpeed = 40; // Vitesse du vaisseau spatial (pour les touches asdw)
+
+        var speed = -10 // pixels per millisecond
+        var maxSpeed = -25 // Vitesse maximum (lorsque <ESPACE> est enfoncée)
+        var minSpeed = -10 // Vitesse minium (en temps normal)
+    
+    //Refresh
+        var framesIntervalMillisecond = 20; // # de millisecondes entre chaque image
+    
+    //Cites
+        var buildingWidth = 100;
+        var cityLength = 64; // Nombre de batiments dans la ville procédurale parallaxe
+
+            var farBuildingsHeights = []; // Liste pour la hauteur des batiments éloignés
+            var middleBuildingsHeights = []; // Liste pour la hauteur des batiments intermédiares
+            var closeBuildingsHeights = []; // Liste pour la hauteur des batiments proches
+        //positions
+            var farBuildingsPos = []; // Positions des batiments éloignés
+            var middleBuildingsPos = []; // Positions des batiments éloignés
+            var closeBuildingsPos = []; // Positions des batiments éloignés
+
+
+
+    function generate_city() {
+
+        for(var i=0; i<cityLength;i++){
+            //far
+            h1 = generateBuilding(7/10,2/10);
+            farBuildingsHeights.push(h1);
+            farBuildingsPos.push(buildingWidth*i);
+
+            //middle
+            h2 = generateBuilding(5/10,2/10);
+            middleBuildingsHeights.push(h2);
+            middleBuildingsPos.push(buildingWidth*i);
+
+            //Low
+            h3 = generateBuilding(2/10,4/10);
+            closeBuildingsHeights.push(h3);
+            closeBuildingsPos.push(buildingWidth*i);
+        }
+    }
+
+    //Fonction qui permet de générer des hauteurs de batiments hMin +/- delta où 1=hauteur du canvas
+    function generateBuilding(hMin,delta){
+        return Math.round((canvas.height*hMin+ Math.random()*canvas.height*delta)*40)/40;
+    }
+
+    function draw() {
+        graphics.clearRect(0,0,canvas.width,canvas.height); // On nettoie le canvas
+        
+        // Dessine le background
+        draw_background();
+
+        // On dessine la ville
+        draw_city();
+
+        // On dessine le vaisseau
+        draw_vessel();
+
+        // Update the building position
+        update();
+
+    }
+
+    function draw_vessel(){
+        graphics.save();
+        //change l'offset
+        graphics.translate(vesselPos.x,vesselPos.y);
+        
+        //init
+            graphics.fillStyle="white";
+            graphics.strokeStyle="#000";
+            graphics.strokeWidth = "5";
+
+        //Corps
+            graphics.fillRect(0,0,40,40);
+            graphics.strokeRect(0,0,40,40);
+
+            graphics.fillRect(-10,5,10,30);
+            graphics.strokeRect(-10,5,10,30);
+
+        //bec
+            graphics.beginPath();
+            graphics.moveTo(40,0);
+            graphics.lineTo(80,20);
+            graphics.lineTo(40,40);
+            graphics.stroke();
+            graphics.fill();
+        //fenetre
+            graphics.fillStyle="black";
+            graphics.beginPath();
+            graphics.moveTo(40,5);
+            graphics.lineTo(70,20);
+            graphics.lineTo(40,20);
+            graphics.stroke();
+            graphics.fill();
+
+
+        //Choix de la flamme
+            if(!ultraspeed){
+
+                graphics.shadowColor = "red";
+                graphics.shadowBlur = 15;
+                graphics.beginPath();
+                graphics.fillStyle = "yellow";
+                graphics.moveTo(-10,0);
+                graphics.lineTo(-15,10);
+                graphics.lineTo(-55,20);
+                graphics.lineTo(-15,30);
+                graphics.lineTo(-10,40);
+                graphics.stroke();
+                graphics.fill();
+
+                graphics.beginPath();
+                graphics.fillStyle = "red";
+                graphics.moveTo(-10,15);
+                graphics.lineTo(-40,20);
+                graphics.lineTo(-10,25);
+                graphics.stroke();
+                graphics.fill();
+            }else{
+
+                graphics.shadowColor = "red";
+                graphics.shadowBlur = 40;
+                graphics.beginPath();
+                graphics.fillStyle = "red";
+                graphics.moveTo(-10,0);
+                graphics.lineTo(-15,10);
+                graphics.lineTo(-75,20);
+                graphics.lineTo(-15,30);
+                graphics.lineTo(-10,40);
+                graphics.stroke();
+                graphics.fill();
+
+                graphics.beginPath();
+                graphics.fillStyle = "blue";
+                graphics.moveTo(-10,15);
+                graphics.lineTo(-40,20);
+                graphics.lineTo(-10,25);
+                graphics.stroke();
+                graphics.fill();
+
+            }
+
+            graphics.restore();
+
+    }
+
+    function draw_background(){
+        graphics.save();
+            var background_gradient = graphics.createLinearGradient(0,0,canvas.width,canvas.height*8/10);
+            background_gradient.addColorStop(1,"rgb(0,18,238)");
+            background_gradient.addColorStop(0,"rgb(0,12,98)");
+
+            graphics.fillStyle = background_gradient;
+            graphics.fillRect(0,0,canvas.width,canvas.height);
+        graphics.restore();
+    }
+
+    function draw_city(){
+    graphics.save();
+
+    //Dessiner les carrés
+        for(var i=0;i<cityLength;i++){
+            drawSquare(farBuildingsPos[i]+f1*drag, farBuildingsHeights[i],"rgb(0,50,114)");
+        }
+        for(var i=0;i<cityLength;i++){
+            drawSquare(middleBuildingsPos[i]+f2*drag, middleBuildingsHeights[i],"rgb(0,87,193)");
+        }
+        for(var i=0;i<cityLength;i++){
+            drawSquare(closeBuildingsPos[i]+f3*drag, closeBuildingsHeights[i],"rgb(94,166,255)");
+        }
+
+
+        graphics.restore();
+    }
+    function drawSquare(pos1, height,color,){
+        graphics.fillStyle=color;
+            var x = pos1;
+            var y = canvas.height - height;
+
+            var w = buildingWidth;
+            var h = height;
+            graphics.fillRect(x,y,w,h);
+    }
+
+
+    function updateVesselPosition(e){
+        // Interactivité avec le clavier
+        if ( e.keyCode == 87 ) { //W
+            vesselPos.y -= vesselSpeed;
+            if(vesselPos.y < 0){
+                vesselPos.y=0;
+            }
+        }
+
+        if ( e.keyCode == 83 ) { // S
+            vesselPos.y += vesselSpeed;
+            if(vesselPos.y >= canvas.height){
+                vesselPos.y = canvas.height-40;
+            }
+        }
+
+        if ( e.keyCode == 65 ) { // A
+           vesselPos.x -= vesselSpeed;
+           if(vesselPos.x < 50){
+                vesselPos.x=50;
+            }
+        }
+
+        if ( e.keyCode == 68 ) { // D
+            vesselPos.x += vesselSpeed;
+            if(vesselPos.x >= canvas.width-90){
+                vesselPos.x=canvas.width-90;
+            }
+        }
+
+        if ( e.keyCode == 32 ){ // Space
+            ultraspeed = true;
+            speed = -20;
+        }
+    }
+
+    function releaseSpace(e){
+        if (e.keyCode == 32){ // Space
+           ultraspeed = false;
+           speed = -10;
+        }
+    }
+
+    function init() {
+        // Initialisation du dessin. Il s'affiche sur toute la fenêtre
+        canvas = document.getElementById("theCanvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        window.addEventListener("keydown", updateVesselPosition, true);
+        window.addEventListener("keyup", releaseSpace, true);
+
+        graphics = canvas.getContext("2d");
+        generate_city(); // Générer les données de la ville parallaxe.
+        setInterval(draw, framesIntervalMillisecond);
+    }
+
+    function update(){
+            //Mettre a jour les tableaux
+            if(farBuildingsPos[0]< (-1)*f1*drag-2*buildingWidth){
+            x = farBuildingsPos.shift();
+            h = farBuildingsHeights.shift();
+
+            x += cityLength*buildingWidth;
+            farBuildingsPos.push(x);
+            farBuildingsHeights.push(h);
+        }
+        if(middleBuildingsPos[0]< (-1)*f2*drag-2*buildingWidth){
+            x = middleBuildingsPos.shift();
+            h = middleBuildingsHeights.shift();
+
+            x += cityLength*buildingWidth;
+            middleBuildingsPos.push(x);
+            middleBuildingsHeights.push(h);
+        }
+
+        if(closeBuildingsPos[0]< (-1)*f3*drag-2*buildingWidth){
+            x = closeBuildingsPos.shift();
+            h = closeBuildingsHeights.shift();
+
+            x += cityLength*buildingWidth;
+            closeBuildingsPos.push(x);
+            closeBuildingsHeights.push(h);
+        }
+
+        drag+=speed;
+    }
+
+</script>
+</head>
+<body onload="init()">
+    <canvas id="theCanvas"></canvas>
+</body>
+</html>
