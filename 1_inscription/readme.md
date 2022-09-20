@@ -6,7 +6,6 @@
 1.	Choissisez Student
 1.	Complètez les 3 pages d’inscription avec votre addresse uqam( XX@courriel.uqam.ca)
 
-<img src="./images/aws_1.png" alt="aws_1" />
 ---
 
 5.	Allez dans votre courriel uqam et valider votre courriel
